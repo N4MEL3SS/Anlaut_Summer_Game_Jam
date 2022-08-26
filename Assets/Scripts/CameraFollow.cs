@@ -7,22 +7,19 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private GameObject player;
 
-    [SerializeField] private float cameraPositionX;
-    [SerializeField] private float cameraPositionY;
-    [SerializeField] private float cameraPositionZ;
-
-    private Vector3 offset;
+    [SerializeField] private Vector3 cameraOffset;
     
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         mainCamera = Camera.main;
-        offset = new Vector3(cameraPositionX, cameraPositionY, cameraPositionZ);
+        if (mainCamera != null)
+            mainCamera.transform.position = player.transform.position;
     }
 
     // Update is called once per frame
-    void LateUpdate()
+    private void LateUpdate()
     {
-        mainCamera.transform.position = player.transform.position + offset;
+        mainCamera.transform.position = player.transform.position + cameraOffset;
     }
 }
