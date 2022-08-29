@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Ground
   - Wall
+  - Break_Point
   layers:
   - Default
   - TransparentFX
