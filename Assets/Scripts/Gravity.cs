@@ -6,6 +6,7 @@ using UnityEngine;
 public class Gravity : MonoBehaviour
 {
     [SerializeField] private float gravityForce = -15f;
+    [SerializeField] private float gravityIdle = -0.5f;
     
     private CharacterController _characterController;
     private float _gravity;
@@ -23,7 +24,7 @@ public class Gravity : MonoBehaviour
         }
         else
         {
-            _gravity = -1f;
+            _gravity = gravityIdle;
         }
 
         return _gravity;
