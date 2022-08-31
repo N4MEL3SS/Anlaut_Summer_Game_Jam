@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
 #endif
@@ -8,7 +9,7 @@ using UnityEngine.InputSystem;
 
 namespace StarterAssets
 {
-    [RequireComponent(typeof(CharacterController))]
+    // [RequireComponent(typeof(CharacterController))]
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
     [RequireComponent(typeof(PlayerInput))]
 #endif
@@ -99,14 +100,21 @@ namespace StarterAssets
         private int _animIDJump;
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
+        private int _aimOn;
+        private int _reverseAnim;
 
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
         private PlayerInput _playerInput;
 #endif
         private Animator _animator;
-        private CharacterController _controller;
+        public CharacterController controller;
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
+        public GameObject joyGun;
+
+        private bool _gunState;
+
+        public Transform spawnPoint;
 
         private const float _threshold = 0.01f;
 
@@ -143,7 +151,7 @@ namespace StarterAssets
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
             _hasAnimator = TryGetComponent(out _animator);
-            _controller = GetComponent<CharacterController>();
+            // controller = GetComponent<CharacterController>();
             _input = GetComponent<StarterAssetsInputs>();
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
             _playerInput = GetComponent<PlayerInput>();
@@ -152,6 +160,7 @@ namespace StarterAssets
 #endif
 
             AssignAnimationIDs();
+            transform.position = spawnPoint.transform.position;
 
             // reset our timeouts on start
             // _jumpTimeoutDelta = JumpTimeout;
@@ -179,6 +188,8 @@ namespace StarterAssets
             _animIDJump = Animator.StringToHash("Jump");
             _animIDFreeFall = Animator.StringToHash("FreeFall");
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+            _aimOn = Animator.StringToHash("AimOn");
+            _reverseAnim = Animator.StringToHash("ReverseAnim");
         }
 
         private void GroundedCheck()
@@ -233,7 +244,7 @@ namespace StarterAssets
             }
 
             // a reference to the players current horizontal velocity
-            float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
+            float currentHorizontalSpeed = new Vector3(controller.velocity.x, 0.0f, controller.velocity.z).magnitude;
 
             float speedOffset = 0.1f;
             float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
@@ -263,7 +274,7 @@ namespace StarterAssets
 
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
-            if (_input.move != Vector2.zero)
+            if (_input.move != Vector2.zero && !isAim.mouseButtonIsPressed)
             {
                 isStop = false;
                 _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
@@ -281,12 +292,17 @@ namespace StarterAssets
             // move the player
             if (!isAim.mouseButtonIsPressed)
             {
-                _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
+                controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
                     new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
             }
             else
             {
-                transform.eulerAngles = _mainCamera.transform.eulerAngles * 1.2f;
+                _targetRotation = _mainCamera.transform.eulerAngles.y;
+                float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
+                    RotationSmoothTime);
+
+                // rotate to face input direction relative to camera position
+                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
             }
 
             // update animator if using character
@@ -294,6 +310,25 @@ namespace StarterAssets
             {
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+                
+                _animator.SetFloat(_reverseAnim, 1);
+                _animator.SetBool(_aimOn, false);
+                
+                _gunState = false;
+                joyGun.SetActive(false);
+            }
+            else if (_hasAnimator && isAim.mouseButtonIsPressed)
+            {
+                _animator.SetFloat(_animIDSpeed, 0);
+                // _animator.SetFloat(_animIDMotionSpeed, 0);
+                
+                _animator.SetFloat(_reverseAnim, -1);
+                _animator.SetBool(_aimOn, true);
+
+                if (!_gunState)
+                {
+                    StartCoroutine("Wait");
+                }
             }
         }
 
@@ -366,6 +401,13 @@ namespace StarterAssets
             }
         }
 
+        private IEnumerator Wait()
+        {
+            yield return new WaitForSeconds(0.3f);
+            _gunState = true;
+            joyGun.SetActive(_gunState);
+        }
+        
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
         {
             if (lfAngle < -360f) lfAngle += 360f;
@@ -394,7 +436,7 @@ namespace StarterAssets
                 if (FootstepAudioClips.Length > 0)
                 {
                     var index = Random.Range(0, FootstepAudioClips.Length);
-                    AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
+                    AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(controller.center), FootstepAudioVolume);
                 }
             }
         }
@@ -403,7 +445,7 @@ namespace StarterAssets
         {
             if (animationEvent.animatorClipInfo.weight > 0.5f)
             {
-                AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+                AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(controller.center), FootstepAudioVolume);
             }
         }
     }
