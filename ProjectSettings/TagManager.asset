@@ -9,6 +9,8 @@ TagManager:
   - Fire
   - CinemachineTarget
   - Rumba
+  - Item
+  - RigidBody
   layers:
   - Default
   - TransparentFX

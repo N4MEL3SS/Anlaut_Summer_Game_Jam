@@ -1,11 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ArrowProjectile : MonoBehaviour
 {
     public float force;
     private Rigidbody _rigidbodyComponent;
+    private Transform _player;
 
     [SerializeField] private GameObject ready;
     [SerializeField] private GameObject used;
@@ -17,8 +19,9 @@ public class ArrowProjectile : MonoBehaviour
         _rigidbodyComponent.centerOfMass = transform.position;
     }
 
-    public void Fire()
+    public void Fire(Transform player)
     {
+        _player = player;
         used.SetActive(false);
         ready.SetActive(true);
         _rigidbodyComponent.AddForce(transform.forward * (force * Random.Range(1.3f, 1.7f)), ForceMode.Impulse);
@@ -31,11 +34,21 @@ public class ArrowProjectile : MonoBehaviour
             used.SetActive(true);
             ready.SetActive(false);
             _rigidbodyComponent.isKinematic = true;
+            
+            if (collision.gameObject.CompareTag("Item") && collision.gameObject.GetComponent<Rigidbody>())
+            {
+
+                Rigidbody rb = collision.gameObject.GetComponent<Rigidbody>();
+                
+                _rigidbodyComponent.isKinematic = false;
+                rb.velocity = (collision.gameObject.transform.position - _player.transform.position).normalized * -1.5f;
+            }
+            
             StartCoroutine(Countdown());
         }
     }
 
-    IEnumerator Countdown()
+    private IEnumerator Countdown()
     {
         yield return new WaitForSeconds(wait);
         Destroy(gameObject);

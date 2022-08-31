@@ -1,12 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SelectCamera : MonoBehaviour
 {
     public GameObject mainCamera;
     public GameObject aimCamera;
     public GameObject aimReticle;
+
+    public GameObject player;
+    public Image crossHair;
 
     public GameObject look;
     public GameObject arrowPrefab;
@@ -25,6 +29,21 @@ public class SelectCamera : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        RaycastHit _raycastHit;
+        Vector3 fwd = look.transform.TransformDirection(Vector3.forward);
+
+        if (Physics.Raycast(look.transform.position, fwd, out _raycastHit))
+        {
+            if (_raycastHit.transform.CompareTag("Item"))
+            {
+                crossHair.color = Color.green;
+            }
+            else
+            {
+                crossHair.color = Color.white;
+            }
+        }
+
         if (Input.GetKeyDown("mouse 1") && !mouseButtonIsPressed)
         {
             mouseButtonIsPressed = true;
@@ -69,12 +88,12 @@ public class SelectCamera : MonoBehaviour
 
         projectile.transform.forward = look.transform.forward;
         projectile.transform.position = fireTransform.position + fireTransform.forward;
-        // projectile.transform.rotation = transform.rotation;
+        
         
         //Wait for the position to update
         yield return new WaitForSeconds(0.05f);
 
-        projectile.GetComponent<ArrowProjectile>().Fire();
+        projectile.GetComponent<ArrowProjectile>().Fire(player.transform);
         mouseFire = false;
     }
     
