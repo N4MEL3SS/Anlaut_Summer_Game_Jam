@@ -8,17 +8,32 @@ using UnityEngine.UI;
 public class TestSfer 
     : MonoBehaviour
 {
-    public GameObject enemy;
+    public GameObject thing;
     public GameObject dot;
     public GameObject menuTwo;
     public GameObject menuOne;
-  void OnMouseDown()
+    public GameObject applying;
+    private bool flag = false;
+    private GameObject obj;
+
+
+    private void Start()
+    {
+        if (flag == false)
+        {
+            Vector3 spawnPoint = applying.transform.position + Vector3.up * 2;
+            obj = Instantiate(dot, spawnPoint, transform.rotation * Quaternion.Euler (0f, 0f, -180f));
+            flag = true;
+        }
+    }
+
+    void OnMouseDown()
   {
       if (PlayerPrefs.HasKey("Cub"))
       {
           // Instantiate(enemy);
           PlayerPrefs.DeleteKey("Cub");
-          dot.SetActive(false);
+          Destroy(obj);
           menuOne.SetActive(true);
           menuTwo.SetActive(true);
       }
@@ -27,7 +42,7 @@ public class TestSfer
 
   public void One()
   {
-      Instantiate(enemy);
+      Instantiate(thing);
       menuTwo.SetActive(false);
       menuOne.SetActive(false);
   }
